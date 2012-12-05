@@ -4,6 +4,8 @@
 
  Ported to JavaScript and modified by Matthew Crumley (email@matthewcrumley.com, http://silentmatt.com/)
 
+ Additions for blob math synth by Chris McCormick <chris@mccormick.cx>, 2012.
+
  You are free to use and modify this code in anyway you find useful. Please leave this comment in the code
  to acknowledge its original source. If you feel like it, I enjoy hearing about projects that use my code,
  but don't feel like you have to let me know or ask permission.
@@ -324,9 +326,47 @@ var Parser = (function (scope) {
 		return -a;
 	}
 
+	// Miller's mtof
+	function mtof(a) {
+		if (a <= -1500) {
+			return 0;
+		} else if (a > 1499) {
+			return mtof(1499);
+		} else {
+			return (8.17579891564 * Math.exp(.0577622650 * a));
+		}
+	}
+
+	function srand_nextx(x) {
+		return 36969 * (x & 0xFFFF) + (x >> 16);
+	}
+	
+	function srand_nexty(y) {
+		return 18273 * (y & 0xFFFF) + (y >> 16);
+	}
+	
+	function srandom(a) {
+		var x = a * 3253;
+		var y = srand_nextx(x);
+		
+		// Random number generator using George Marsaglia's MWC algorithm.
+		// Got this from the v8 js engine
+		
+		// don't let them get stuck
+		if (x == 0) x == -1;
+		if (y == 0) y == -1;
+		
+		// Mix the bits.
+		x = srand_nextx(srand_nextx(x));
+		y = srand_nexty(srand_nexty(y));
+		
+		return ((x << 16) + (y & 0xFFFF)) / 0xFFFFFFFF + 0.5;
+	}
+
 	function random(a) {
 		return Math.random() * (a || 1);
 	}
+
 	function fac(a) { //a!
 		a = Math.floor(a);
 		var b = a;
@@ -376,7 +416,9 @@ var Parser = (function (scope) {
 			"floor": Math.floor,
 			"round": Math.round,
 			"-": neg,
-			"exp": Math.exp
+			"exp": Math.exp,
+			"mtof": mtof,
+			"srandom": srandom
 		};
 
 		this.ops2 = {
